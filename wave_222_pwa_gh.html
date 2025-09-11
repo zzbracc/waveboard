@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Wave 合併榜單（PWA｜GitHub Pages）</title>
+
+  <!-- PWA -->
+  <meta name="theme-color" content="#3b82f6">
+  <link rel="manifest" href="/waveboard/manifest_gh.webmanifest">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Wave 合併榜單">
+  <link rel="apple-touch-icon" href="/waveboard/icon-192.png">
+
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.min.css" />
+  <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.0.2/css/buttons.dataTables.min.css" />
+  <script src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/3.0.2/js/dataTables.buttons.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/3.0.2/js/buttons.html5.min.js"></script>
+</head>
+<body>
+  <h1>Wave 合併榜單 PWA 測試版</h1>
+  <button onclick="getdata()">開始查詢</button>
+  <div id="status"></div>
+  <script>
+    async function getdata(){
+      document.getElementById('status').textContent = "查詢中...";
+      try{
+        const url = "https://wave-proxy.arbez-9241.workers.dev/api/v1/leaderboards/event?type=4&period=4&date_shift=-1&user_id=5bd69b10-a6b2-4241-b175-0782596fd706";
+        const res = await fetch(url);
+        const data = await res.json();
+        document.getElementById('status').textContent = "成功：" + data.data.length + " 筆";
+      }catch(e){
+        document.getElementById('status').textContent = "錯誤：" + e;
+      }
+    }
+    if('serviceWorker' in navigator){
+      window.addEventListener('load', ()=>{
+        navigator.serviceWorker.register('/waveboard/sw_gh.js',{scope:'/waveboard/'});
+      });
+    }
+  </script>
+</body>
+</html>
