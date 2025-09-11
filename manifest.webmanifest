@@ -1,0 +1,23 @@
+{
+  "name": "Wave 合併榜單",
+  "short_name": "Wave榜單",
+  "description": "查榜＋TopN 合併＋合併維護（可離線使用）",
+  "start_url": "./wave_222_pwa.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3b82f6",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
