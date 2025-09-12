@@ -196,15 +196,6 @@
       <button id="applyMap2" class="secondary">套用到合併榜</button>
       <button id="exportCsv2" class="secondary">匯出 CSV</button>
       <button id="exportJson2" class="secondary">匯出 JSON</button>
-      <button id="importJson2" class="secondary">匯入 JSON</button>
-      <label class="mini" style="display:inline-flex;gap:8px;align-items:center;margin-left:8px;">
-        <span>模式：</span>
-        <select id="importMode">
-          <option value="overwrite" selected>覆蓋已存在</option>
-          <option value="addonly">僅新增</option>
-        </select>
-      </label>
-      <input type="file" id="importJsonFile" accept="application/json" style="display:none">
     </div>
 
     <div id="bulkArea" class="hidden" style="margin-bottom:10px;">
@@ -225,6 +216,7 @@
         <div style="display:flex;gap:8px;align-items:center;">
           <div style="font-weight:700;">合併後暱稱：</div>
           <input id="editGroupName" placeholder="選一個群組或新增" style="max-width:320px">
+          <button id="renameGroupBtn" class="secondary">重新命名</button>
           <button id="newGroupBtn" class="secondary">新增群組</button>
           <div class="spacer"></div>
           <button id="deleteGroupBtn" class="secondary" style="border-color:#fca5a5;color:#b91c1c">刪除群組</button>
@@ -680,61 +672,42 @@ function setup(){
 
 window.onload = setup;
 
-// === 匯入 JSON（覆蓋 / 僅新增） ===
+// === 重新命名目前群組（合併後暱稱） ===
+function renameCurrentGroup(newName){
+  newName = norm(newName);
+  if(!currentGroup){ alert('請先從左側選擇一個群組'); return; }
+  if(!newName){ alert('新名稱不能是空白'); return; }
+  if(newName === currentGroup){ setStatus('warn','新舊名稱相同，未變更'); return; }
+
+  const m = loadMergeMap();
+  let touched = 0;
+  Object.keys(m).forEach(k=>{
+    if(norm(m[k]) === currentGroup){
+      m[k] = newName;
+      touched++;
+    }
+  });
+
+  saveMergeMap(m);
+  currentGroup = newName;
+  const input = document.getElementById('editGroupName'); if(input) input.value = newName;
+  refreshEditor(); refreshGroupList(); refreshUnassigned();
+  setStatus('ok', `已將群組重新命名為「${newName}」（影響 ${touched} 筆）`);
+}
+
+// Button handler
 document.addEventListener('click', (e)=>{
-  if(e.target && e.target.id === 'importJson2'){
-    const picker = document.getElementById('importJsonFile');
-    if (picker) picker.click();
+  if(e.target && e.target.id === 'renameGroupBtn'){
+    const val = document.getElementById('editGroupName')?.value;
+    renameCurrentGroup(val);
   }
 });
 
-document.getElementById('importJsonFile')?.addEventListener('change', async (ev)=>{
-  const file = ev.target.files?.[0];
-  if(!file) return;
-  try{
-    const text = await file.text();
-    let json = JSON.parse(text);
-
-    // 支援三種格式：物件 / [{from,to}] / [["A","B"]]
-    let incoming = {};
-    const put = (k,v)=>{ if(k){ incoming[String(k)] = String(v || k); } };
-
-    if (Array.isArray(json)){
-      json.forEach(item=>{
-        if (Array.isArray(item) && item.length){
-          put(item[0], item[1] ?? item[0]);
-        } else if (item && typeof item === 'object'){
-          put(item.from ?? item.src ?? item.key ?? item[0], item.to ?? item.dest ?? item.value ?? item[1]);
-        }
-      });
-    } else if (json && typeof json === 'object'){
-      incoming = json;
-    } else {
-      throw new Error('不支援的 JSON 結構');
-    }
-
-    const mode = (document.getElementById('importMode')?.value) || 'overwrite';
-    const m = loadMergeMap();
-    let added=0, updated=0, skipped=0;
-
-    Object.entries(incoming).forEach(([rawK, rawV])=>{
-      const k = norm(rawK);
-      const v = norm(rawV || rawK);
-      if(!k){ skipped++; return; }
-      if(mode === 'addonly' && Object.prototype.hasOwnProperty.call(m, k)){
-        skipped++; return; // 僅新增：已存在就跳過
-      }
-      if(Object.prototype.hasOwnProperty.call(m, k)) updated++; else added++;
-      m[k] = v;
-    });
-
-    saveMergeMap(m);
-    refreshGroupList(); refreshEditor(); refreshUnassigned();
-    setStatus('ok', `匯入完成（模式：${mode==='overwrite'?'覆蓋':'僅新增'}）：新增 ${added}、更新 ${updated}、忽略 ${skipped}`);
-  } catch(err){
-    setStatus('err', '匯入失敗：' + (err?.message || err));
-  } finally {
-    ev.target.value = ''; // 允許再次選相同檔名
+// Enter key to rename
+document.getElementById('editGroupName')?.addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter'){
+    e.preventDefault();
+    renameCurrentGroup(e.target.value);
   }
 });
 
